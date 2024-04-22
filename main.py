@@ -1,16 +1,17 @@
 from multiprocessing.pool import ThreadPool
 
 from psutil import process_iter
-from selenium.webdriver.safari.webdriver import WebDriver as Safari
-from selenium.webdriver.safari.options import Options as SafariOptions
+from sys import platform
+from selenium import webdriver
+
 from time import sleep
 from random import random
 
 base_duration_seconds = 60 * 3
 random_duration_seconds = 60
+macos: bool = platform == 'darwin'
 
-
-def batch_proxies( batch_size: int = 8 ) -> list[str]:
+def batch_proxies( batch_size: int = 12 ) -> list[str]:
     with open( 'proxies.txt', 'r' ) as file:
         index: int = 0
         try:
@@ -23,9 +24,12 @@ def batch_proxies( batch_size: int = 8 ) -> list[str]:
 
 
 def add_view( proxy: str ) -> None:
-    options = SafariOptions()
+    sleep( int( abs( random() * 12 - 6 ) ) )
+    options = webdriver.SafariOptions() if macos else webdriver.ChromeOptions()
     options.add_argument( f'--proxy-server={proxy}' )  # None return
-    driver = Safari( options = options )
+    #options.add_argument( '--headless' )
+    service = None if macos else webdriver.ChromeService( executable_path='./chromedriver.exe' )
+    driver = webdriver.Safari( options = options ) if macos else webdriver.Chrome( service = service, options = options )
     driver.get( 'https://www.youtube.com/watch?v=0B-n8-6ksBs' )  # None return
     sleep(
         base_duration_seconds * 4 + (random() * random_duration_seconds - random_duration_seconds / 2)
@@ -50,7 +54,7 @@ def main() -> None:
         except Exception as error:
             print( error )
 
-        garbage_collector()  # None return
+        if macos: garbage_collector()  # None return
 
 
 if __name__ == '__main__':
